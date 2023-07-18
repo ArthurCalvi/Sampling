@@ -29,3 +29,27 @@ def get_polygon(name, epsg):
     pol = wkt.loads(spatial_entity.wkt())
     pol_ = shape(transform_geom('EPSG:4326', epsg, pol))
     return pol_, spatial_entity
+
+from shapely.geometry import Point
+import random
+random.seed()
+
+def get_bounding_box(row, gdf):
+    aoi = Point(row.geometry.centroid.x, row.geometry.centroid.y).buffer(4750, cap_style=3)
+    neighbors = gdf.clip(aoi)
+    neighbors = neighbors.append(row)
+
+    return neighbors, aoi
+
+def get_random_bounding_box(gdf, gdf_ref):
+    random_row = random.choice(gdf_ref.index.tolist())
+    row = gdf_ref.loc[[random_row]]
+    return get_bounding_box(row, gdf)
+
+def compute_IoU(bounds1, bounds2):
+    if bounds1.intersects(bounds2):
+        IoU = bounds1.intersection(bounds2).area / bounds1.union(bounds2).area
+    else: 
+        IoU = 0
+        
+    return IoU
